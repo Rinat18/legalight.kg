@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ExternalLink, ArrowRight, Loader2, TrendingUp, BookOpen } from 'lucide-react';
+import { ArrowRight, Loader2, TrendingUp, Globe, Clock, ExternalLink, RefreshCw, Filter } from 'lucide-react';
 
 interface NewsItem {
   title: string;
@@ -9,30 +9,34 @@ interface NewsItem {
   link: string;
   description: string;
   source: string;
+  isFallback?: boolean;
 }
 
-// "Вечные" новости (показываются, если все способы загрузки не сработали)
-const FALLBACK_NEWS: NewsItem[] = [
+// ЗАПАСНЫЕ ССЫЛКИ
+const FALLBACK_RESOURCES: NewsItem[] = [
   {
-    title: "НБКР утвердил новые стандарты кибербезопасности для банков",
-    pubDate: new Date().toISOString(),
+    title: "Раздел Экономика на 24.kg",
+    pubDate: "",
+    link: "https://24.kg/ekonomika/",
+    description: "Перейти к полному списку экономических новостей.",
+    source: "24.kg",
+    isFallback: true
+  },
+  {
+    title: "Курсы валют (НБКР)",
+    pubDate: "",
     link: "https://www.nbkr.kg/",
-    description: "Регулятор обновляет требования к защите информации в финансовом секторе для предотвращения мошенничества.",
-    source: "НБКР"
+    description: "Официальные курсы и статистика.",
+    source: "НБКР",
+    isFallback: true
   },
   {
-    title: "Обзор рынка: банки Кыргызстана наращивают кредитный портфель",
-    pubDate: new Date().toISOString(),
-    link: "https://banks.kg/",
-    description: "Аналитика показывает рост интереса бизнеса и населения к кредитным продуктам в национальной валюте.",
-    source: "Banks.kg"
-  },
-  {
-    title: "LegaLight: Как получить лицензию на крипто-обменник в 2024 году",
-    pubDate: new Date().toISOString(),
-    link: "https://legalight.kg/services",
-    description: "Экспертный разбор законодательства о виртуальных активах и пошаговая инструкция для бизнеса.",
-    source: "LegaLight"
+    title: "Финансовый портал Akchabar",
+    pubDate: "",
+    link: "https://www.akchabar.kg/ru/news/",
+    description: "Новости банковского сектора.",
+    source: "Akchabar",
+    isFallback: true
   }
 ];
 
@@ -42,125 +46,161 @@ export default function NewsSection() {
   const [isLive, setIsLive] = useState(false);
 
   useEffect(() => {
-    let isMounted = true;
-
-    async function fetchNews() {
-      // Ищем новости с banks.kg через Google News
-      const RSS_URL = 'https://news.google.com/rss/search?q=site:banks.kg&hl=ru&gl=KG&ceid=KG:ru';
-      
-      // СПИСОК ПРОКСИ (Пробуем по очереди)
-      // 1. rss2json (самый чистый JSON)
-      // 2. codetabs (очень надежный прокси)
-      // 3. allorigins (запасной)
-      const STRATEGIES = [
-        {
-          type: 'json',
-          url: `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(RSS_URL)}`
-        },
-        {
-          type: 'xml',
-          url: `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(RSS_URL)}`
-        },
-        {
-          type: 'xml',
-          url: `https://api.allorigins.win/raw?url=${encodeURIComponent(RSS_URL)}`
-        }
-      ];
-
-      let success = false;
-
-      for (const strategy of STRATEGIES) {
-        if (success) break; // Если уже скачали, выходим
-
-        try {
-          const response = await fetch(strategy.url, { signal: AbortSignal.timeout(5000) });
-          if (!response.ok) continue;
-
-          let items: any[] | NodeListOf<Element> = [];
-          const parsedNews: NewsItem[] = [];
-
-          if (strategy.type === 'json') {
-            const data = await response.json();
-            if (data.items) {
-               // Конвертируем формат rss2json
-               data.items.slice(0, 3).forEach((item: any) => {
-                  parsedNews.push({
-                    title: item.title,
-                    link: item.link,
-                    pubDate: item.pubDate,
-                    description: cleanDescription(item.description || item.content),
-                    source: "Banks.kg"
-                  });
-               });
-               if (parsedNews.length > 0) success = true;
-            }
-          } else {
-            // Парсим XML (для codetabs и allorigins)
-            const text = await response.text();
-            const parser = new DOMParser();
-            const xml = parser.parseFromString(text, "text/xml");
-            const xmlItems = xml.querySelectorAll("item");
-            
-            xmlItems.forEach((item, index) => {
-                if (index > 2) return;
-                parsedNews.push({
-                    title: item.querySelector("title")?.textContent || "",
-                    link: item.querySelector("link")?.textContent || "",
-                    pubDate: item.querySelector("pubDate")?.textContent || "",
-                    description: cleanDescription(item.querySelector("description")?.textContent || ""),
-                    source: "Banks.kg"
-                });
-            });
-            if (parsedNews.length > 0) success = true;
-          }
-
-          if (success && isMounted) {
-            setNews(parsedNews);
-            setIsLive(true);
-          }
-
-        } catch (e) {
-          console.warn(`Стратегия ${strategy.url} не сработала`);
-        }
-      }
-
-      // Если ничего не сработало — ставим заглушку
-      if (!success && isMounted) {
-        setNews(FALLBACK_NEWS);
-        setIsLive(false);
-      }
-      
-      if (isMounted) setLoading(false);
-    }
-
     fetchNews();
-
-    return () => { isMounted = false; };
   }, []);
 
-  // Вспомогательная функция для очистки текста
-  const cleanDescription = (html: string) => {
-    if (!html) return "Подробнее читайте на сайте источника.";
-    const div = document.createElement("div");
-    div.innerHTML = html;
-    let text = div.textContent || "";
-    // Убираем лишние фразы Google
-    text = text.replace(/Посмотреть статью полностью/g, '');
-    text = text.replace(/Google News/g, '');
-    if (text.length < 10) return "Подробности по ссылке...";
-    if (text.length > 130) return text.slice(0, 130) + "...";
-    return text;
+  // --- ФУНКЦИЯ ДЛЯ ОЧИСТКИ ТЕКСТА ОТ МУСОРА (&nbsp;, &mdash;) ---
+  const cleanText = (rawText: string) => {
+    if (!rawText) return "";
+    
+    // 1. Создаем временный элемент, чтобы браузер сам расшифровал HTML-символы
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = rawText;
+    let decoded = tempDiv.textContent || rawText;
+
+    // 2. Дополнительная зачистка, если браузер пропустил
+    decoded = decoded
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&mdash;/g, '—')
+        .replace(/&quot;/g, '"')
+        .replace(/&laquo;/g, '«')
+        .replace(/&raquo;/g, '»')
+        .replace(/&amp;/g, '&');
+
+    return decoded.trim();
   };
 
-  const formatDate = (dateStr: string) => {
-    try {
-      return new Date(dateStr).toLocaleDateString('ru-RU', {
-        day: 'numeric',
-        month: 'long'
-      });
-    } catch (e) {
-      return "Новости";
+  async function fetchNews() {
+    setLoading(true);
+
+    const SOURCES = [
+      {
+        name: '24.kg',
+        url: 'https://24.kg/rss/', 
+        type: 'direct'
+      },
+      {
+        name: 'Google News',
+        url: 'https://news.google.com/rss/search?q=site:24.kg+ekonomika&hl=ru&gl=KG&ceid=KG:ru',
+        type: 'google'
+      }
+    ];
+
+    const PROXY_DIRECT = 'https://api.codetabs.com/v1/proxy?quest=';
+    const PROXY_GOOGLE = 'https://api.rss2json.com/v1/api.json?api_key=0&rss_url=';
+    const timestamp = new Date().getTime();
+
+    let foundNews: NewsItem[] = [];
+
+    for (const source of SOURCES) {
+      if (foundNews.length >= 3) break;
+
+      try {
+        let response;
+        let dataItems = [];
+
+        if (source.type === 'direct') {
+          // Читаем XML через CodeTabs
+          const fetchUrl = `${PROXY_DIRECT}${encodeURIComponent(source.url)}&dummy=${timestamp}`;
+          response = await fetch(fetchUrl, { signal: AbortSignal.timeout(6000) });
+          if (!response.ok) continue;
+
+          const xmlText = await response.text();
+          const parser = new DOMParser();
+          const xml = parser.parseFromString(xmlText, "text/xml");
+          const items = xml.querySelectorAll("item");
+          
+          items.forEach(item => {
+             let title = item.querySelector("title")?.textContent || "";
+             let link = item.querySelector("link")?.textContent || "";
+             const pubDate = item.querySelector("pubDate")?.textContent || "";
+             let description = item.querySelector("description")?.textContent || "";
+
+             // Чиним ссылки
+             if (link.startsWith('/')) link = `https://24.kg${link}`;
+             if (!link.startsWith('http')) link = `https://24.kg/${link.replace(/^\//, '')}`;
+
+             // --- ЧИСТИМ ЗАГОЛОВОК И ОПИСАНИЕ ТУТ ---
+             title = cleanText(title);
+             description = cleanText(description);
+
+             dataItems.push({ title, link, pubDate, description });
+          });
+        } else {
+          // Читаем Google JSON
+          const fetchUrl = `${PROXY_GOOGLE}${encodeURIComponent(source.url)}&t=${timestamp}`;
+          response = await fetch(fetchUrl);
+          if (!response.ok) continue;
+          const data = await response.json();
+          if (data.items) dataItems = data.items;
+        }
+
+        // ФИЛЬТР: ОСТАВЛЯЕМ ТОЛЬКО ЭКОНОМИКУ
+        dataItems.forEach((item: any) => {
+           if (foundNews.length >= 3) return;
+
+           const linkLower = item.link.toLowerCase();
+           const titleLower = item.title.toLowerCase();
+
+           const isEconomics = 
+                linkLower.includes('/ekonomika/') || 
+                linkLower.includes('/economics/') ||
+                titleLower.includes('ювелир') || // костыль для вашей конкретной новости, если ссылка другая
+                titleLower.includes('банк') ||
+                titleLower.includes('экспорт') ||
+                titleLower.includes('импорт') ||
+                titleLower.includes('цена') ||
+                titleLower.includes('сом');
+
+           if (isEconomics) {
+               // Финальная очистка перед добавлением
+               let cleanTitle = cleanText(item.title);
+               let cleanDesc = cleanText(item.description);
+
+               cleanDesc = cleanDesc.replace(/Google News/g, "").replace(/Посмотреть статью полностью/g, "");
+               if (cleanDesc.length > 110) cleanDesc = cleanDesc.slice(0, 110) + "...";
+               if (cleanDesc.length < 5) cleanDesc = "Нажмите для перехода к новости.";
+
+               foundNews.push({
+                 title: cleanTitle,
+                 pubDate: item.pubDate,
+                 link: item.link,
+                 description: cleanDesc,
+                 source: "24.kg",
+                 isFallback: false
+               });
+           }
+        });
+
+      } catch (e) {
+        console.warn(`Источник ${source.name} пропущен`);
+      }
     }
+
+    if (foundNews.length > 0) {
+      setNews(foundNews);
+      setIsLive(true);
+    } else {
+      setNews(FALLBACK_RESOURCES);
+      setIsLive(false);
+    }
+    setLoading(false);
+  }
+
+  const formatDateTime = (dateStr: string, isFallback?: boolean) => {
+    if (isFallback) return "Раздел";
+    try {
+      const safeDate = dateStr.replace(" ", "T");
+      const date = new Date(safeDate);
+      if (isNaN(date.getTime())) return "Свежее";
+      
+      return date.toLocaleString('ru-RU', {
+        day: 'numeric',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch { return "Свежее"; }
   };
 
   return (
@@ -168,19 +208,24 @@ export default function NewsSection() {
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-end mb-10 gap-4">
             <div>
-                {/* Меняем цвет и иконку в зависимости от статуса */}
-                <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-4 ${isLive ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
-                    {isLive ? <TrendingUp size={14} /> : <BookOpen size={14} />} 
-                    {isLive ? 'Сейчас в эфире' : 'Рекомендуем прочесть'}
+                <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-4 ${isLive ? 'bg-green-100 text-green-800' : 'bg-slate-200 text-slate-600'}`}>
+                    {isLive ? <Filter size={14} /> : <Globe size={14} />} 
+                    {isLive ? 'Live: Экономика 24.kg' : 'Полезные ресурсы'}
                 </div>
                 <h2 className="text-3xl md:text-4xl font-serif font-bold text-slate-900 mb-2">
-                    {isLive ? 'Новости Banks.kg' : 'Полезные материалы'}
+                    Экономическая сводка
                 </h2>
-                <p className="text-slate-500">События и аналитика финансового сектора</p>
+                <p className="text-slate-500">
+                    {isLive ? 'Последние новости бизнеса и финансов' : 'Прямые ссылки на разделы'}
+                </p>
             </div>
-            <a href="https://banks.kg/" target="_blank" rel="noreferrer" className="text-blue-900 font-bold flex items-center gap-2 hover:opacity-70 transition text-sm md:text-base">
-                Перейти на портал <ArrowRight size={18} />
-            </a>
+            
+            <button 
+                onClick={fetchNews} 
+                className="text-blue-900 font-bold flex items-center gap-2 hover:opacity-70 transition text-sm md:text-base cursor-pointer"
+            >
+                <RefreshCw size={18} /> {loading ? 'Обновление...' : 'Обновить'}
+            </button>
         </div>
 
         {loading ? (
@@ -190,15 +235,26 @@ export default function NewsSection() {
         ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {news.map((item, index) => (
-                <a key={index} href={item.link} target="_blank" rel="noreferrer" className="group block h-full">
+                <a 
+                    key={index} 
+                    href={item.link} 
+                    target="_blank" 
+                    rel="noreferrer" 
+                    className="group block h-full"
+                >
                     <article className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl hover:border-blue-200 hover:-translate-y-1 transition duration-300 h-full flex flex-col justify-between">
                         <div>
-                            <div className="text-xs font-bold text-slate-400 mb-3 uppercase tracking-wider flex items-center justify-between">
-                                <span>{formatDate(item.pubDate)}</span>
-                                <span className={`px-2 py-0.5 rounded text-[10px] ${item.source === 'Banks.kg' ? 'bg-red-50 text-red-600' : 'bg-slate-100 text-slate-500'}`}>
+                            {/* Верхняя строка */}
+                            <div className="flex items-center justify-between mb-3">
+                                <div className={`text-xs font-bold uppercase tracking-wider flex items-center gap-1 ${item.isFallback ? 'text-blue-500' : 'text-slate-400'}`}>
+                                    {item.isFallback ? <Globe size={12}/> : <Clock size={12} />}
+                                    <span>{formatDateTime(item.pubDate, item.isFallback)}</span>
+                                </div>
+                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold max-w-[120px] truncate ${item.isFallback ? 'bg-slate-100 text-slate-600' : 'bg-green-50 text-green-700'}`}>
                                     {item.source}
                                 </span>
                             </div>
+
                             <h3 className="text-lg font-bold text-slate-900 mb-3 group-hover:text-blue-900 transition leading-snug line-clamp-3">
                                 {item.title}
                             </h3>
@@ -207,7 +263,7 @@ export default function NewsSection() {
                             </p>
                         </div>
                         <div className="text-blue-700 text-sm font-bold flex items-center gap-1 group-hover:gap-2 transition-all mt-auto pt-4 border-t border-slate-50">
-                            Читать далее <ArrowRight size={16} />
+                            {item.isFallback ? 'Перейти в раздел' : 'Читать на 24.kg'} <ExternalLink size={14} />
                         </div>
                     </article>
                 </a>

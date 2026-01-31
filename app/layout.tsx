@@ -1,9 +1,21 @@
 import type { Metadata } from "next";
-import { Inter, Playfair_Display } from "next/font/google";
+// Импортируем новые шрифты: Montserrat и Lora
+import { Montserrat, Lora } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin", "cyrillic"], variable: '--font-inter' });
-const playfair = Playfair_Display({ subsets: ["latin", "cyrillic"], variable: '--font-playfair' });
+// Настраиваем Montserrat (широкий, современный)
+const montserrat = Montserrat({ 
+  subsets: ["latin", "cyrillic"], 
+  variable: '--font-montserrat',
+  display: 'swap',
+});
+
+// Настраиваем Lora (элегантный с засечками)
+const lora = Lora({ 
+  subsets: ["latin", "cyrillic"], 
+  variable: '--font-lora',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: "LegaLight — Юридические услуги в Бишкеке",
@@ -20,7 +32,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ru" className="scroll-smooth">
-      <body className={`${inter.variable} ${playfair.variable} font-sans`}>{children}</body>
+      {/* Добавляем новые переменные в body */}
+      <body className={`${montserrat.variable} ${lora.variable} font-sans antialiased`}>
+        {children}
+      </body>
     </html>
   );
 }

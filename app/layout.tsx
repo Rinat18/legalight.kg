@@ -17,11 +17,42 @@ const lora = Lora({
   display: 'swap',
 });
 
+const description =
+  "Юридическая компания LegaLight в Бишкеке: лицензирование платежных систем, МФО и МКК, регистрация компаний, юридический аутсорсинг и суды. +996 (772) 77-44-33";
+
 export const metadata: Metadata = {
-  title: "LegaLight — Юридические услуги в Бишкеке",
-  description: "Юридическая помощь, бухгалтерия и HR услуги. +996 (772) 77-44-33",
+  metadataBase: new URL("https://legalight.vercel.app"),
+  title: {
+    default: "LegaLight — Юридические услуги в Бишкеке",
+    template: "%s | LegaLight",
+  },
+  description,
   icons: {
     icon: '/favicon.ico',
+  },
+  openGraph: {
+    type: "website",
+    locale: "ru_KG",
+    siteName: "LegaLight",
+    title: "LegaLight — Юридические услуги в Бишкеке",
+    description,
+  },
+};
+
+// Разметка организации для поисковиков (карточка в Google/Яндекс)
+const organizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "LegalService",
+  name: "LegaLight",
+  legalName: "ОсОО «Легалайт»",
+  url: "https://legalight.vercel.app",
+  telephone: ["+996772774433", "+996554900928"],
+  email: "info@legalight.kg",
+  address: {
+    "@type": "PostalAddress",
+    streetAddress: "ул. Токтогула 125/1, БЦ «Авангард», Tower B",
+    addressLocality: "Бишкек",
+    addressCountry: "KG",
   },
 };
 
@@ -34,6 +65,10 @@ export default function RootLayout({
     <html lang="ru" className="scroll-smooth">
       {/* Добавляем новые переменные в body */}
       <body className={`${montserrat.variable} ${lora.variable} font-sans antialiased`}>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        />
         {children}
       </body>
     </html>

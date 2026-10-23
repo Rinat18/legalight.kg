@@ -1,5 +1,11 @@
 import Link from 'next/link';
 import { ArrowLeft, FileText } from 'lucide-react';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Согласие на обработку данных',
+  description: 'Согласие на обработку персональных данных ОсОО «Легалайт».',
+};
 
 export default function ConsentPage() {
   return (

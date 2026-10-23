@@ -1,5 +1,11 @@
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Политика конфиденциальности',
+  description: 'Политика конфиденциальности и сбора персональных данных ОсОО «Легалайт».',
+};
 
 export default function PrivacyPolicy() {
   return (

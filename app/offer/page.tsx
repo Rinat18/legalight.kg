@@ -1,5 +1,11 @@
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Публичная оферта',
+  description: 'Публичная оферта на оказание юридических услуг ОсОО «Легалайт».',
+};
 
 export default function PublicOffer() {
   return (

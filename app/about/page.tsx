@@ -1,5 +1,11 @@
 import Link from 'next/link';
-import { ArrowLeft, CheckCircle, Clock, Shield, Zap, Globe, Award, Users, Target } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Clock, Shield, Zap, Award, Target } from 'lucide-react';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'О компании',
+  description: 'ОсОО «Легалайт» — юристы с опытом в банковском секторе с 2004 года. Правовое сопровождение финтеха, банков и платежных систем в Кыргызстане.',
+};
 
 export default function AboutPage() {
   return (

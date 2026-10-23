@@ -1,5 +1,11 @@
 import Link from 'next/link';
-import { ArrowLeft, CreditCard, Briefcase, ShieldCheck, Gavel, Landmark, Check, HelpCircle, Clock, Globe } from 'lucide-react';
+import { ArrowLeft, CreditCard, Briefcase, ShieldCheck, Gavel, Landmark, Check, HelpCircle, Globe } from 'lucide-react';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Услуги',
+  description: 'Лицензирование платежных систем (ОПС/ПО), МФО и МКК, регистрация компаний с иностранным участием, юридический аутсорсинг и представительство в судах в Бишкеке.',
+};
 
 export default function ServicesPage() {
   return (
@@ -39,7 +45,7 @@ export default function ServicesPage() {
                 <div>
                     <h2 className="text-2xl md:text-3xl font-bold mb-4">Лицензирование Платежных Систем (ОПС/ПО)</h2>
                     <p className="text-slate-600 leading-relaxed mb-4">
-                        Получение лицензии Оператора платежной системы — ключевой этап для финтех-стартапов и сервисов денежных переводов. Мы сопровождаем процесс "под ключ": от бизнес-модели до получения лицензии в НБКР.
+                        Получение лицензии Оператора платежной системы — ключевой этап для финтех-стартапов и сервисов денежных переводов. Мы сопровождаем процесс «под ключ»: от бизнес-модели до получения лицензии в НБКР.
                     </p>
                     <div className="inline-block bg-green-50 text-green-700 px-4 py-2 rounded-lg text-sm font-bold border border-green-100">
                         Успешно проведено 15+ компаний (98% успеха)

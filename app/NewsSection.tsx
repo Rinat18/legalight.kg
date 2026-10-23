@@ -41,30 +41,69 @@ const FALLBACK_RESOURCES: NewsItem[] = [
   }
 ];
 
+const NEWS_LIMIT = 6;
+
+async function loadFromPhp(): Promise<NewsItem[]> {
+  const res = await fetch('/news.php', { signal: AbortSignal.timeout(10000) });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data: { news: NewsItem[] } = await res.json();
+  return data.news;
+}
+
+async function loadFrom24kg(): Promise<NewsItem[]> {
+  const res = await fetch('https://24.kg/ekonomika/rss/', { signal: AbortSignal.timeout(8000) });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  // DOMParser не выполняет скрипты из чужого XML/HTML
+  const xml = new DOMParser().parseFromString(await res.text(), 'text/xml');
+  const toText = (html: string) =>
+    (new DOMParser().parseFromString(html, 'text/html').body.textContent || '').replace(/\s+/g, ' ').trim();
+
+  return Array.from(xml.querySelectorAll('item'))
+    .slice(0, NEWS_LIMIT)
+    .flatMap((item) => {
+      const title = toText(item.querySelector('title')?.textContent || '');
+      const link = item.querySelector('link')?.textContent?.trim() || '';
+      const date = new Date(item.querySelector('pubDate')?.textContent || '');
+      if (!title || !link.startsWith('https://') || isNaN(date.getTime())) return [];
+
+      let description = toText(item.querySelector('description')?.textContent || '');
+      if (description.length > 160) description = description.slice(0, 157).trimEnd() + '…';
+      const enclosure = item.querySelector('enclosure');
+      const image = enclosure?.getAttribute('type')?.startsWith('image') ? enclosure.getAttribute('url') || undefined : undefined;
+
+      return [{ title, link, description, pubDate: date.toISOString(), source: '24.kg', image }];
+    });
+}
+
 export default function NewsSection() {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [isLive, setIsLive] = useState(false);
 
-  // Новости собирает и кэширует серверный роут /api/news (24.kg + Economist.kg)
+  // 1) /news.php на хостинге собирает и кэширует 24.kg + Economist.kg
+  // 2) если PHP недоступен — читаем RSS 24.kg прямо из браузера (он разрешает CORS)
+  // 3) иначе показываем запасные ссылки
   const fetchNews = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/news/');
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data: { news: NewsItem[] } = await res.json();
-      if (data.news.length === 0) throw new Error('empty');
-      setNews(data.news);
-      setIsLive(true);
-    } catch {
-      setNews(FALLBACK_RESOURCES);
-      setIsLive(false);
-    } finally {
-      setLoading(false);
+    for (const load of [loadFromPhp, loadFrom24kg]) {
+      try {
+        const items = await load();
+        if (items.length > 0) {
+          setNews(items);
+          setIsLive(true);
+          setLoading(false);
+          return;
+        }
+      } catch {
+        // пробуем следующий источник
+      }
     }
+    setNews(FALLBACK_RESOURCES);
+    setIsLive(false);
+    setLoading(false);
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- состояние меняется только после await
     fetchNews();
   }, [fetchNews]);
 
@@ -99,7 +138,7 @@ export default function NewsSection() {
             </div>
 
             <button
-                onClick={fetchNews}
+                onClick={() => { setLoading(true); fetchNews(); }}
                 disabled={loading}
                 className="text-blue-900 font-bold flex items-center gap-2 hover:opacity-70 transition text-sm md:text-base cursor-pointer disabled:opacity-50"
             >

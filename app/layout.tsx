@@ -46,7 +46,7 @@ const organizationJsonLd = {
   name: "LegaLight",
   legalName: "ОсОО «Легалайт»",
   url: "https://legalight.vercel.app",
-  telephone: ["+996772774433", "+996554900928"],
+  telephone: "+996772774433",
   email: "info@legalight.kg",
   address: {
     "@type": "PostalAddress",

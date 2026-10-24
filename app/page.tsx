@@ -101,7 +101,6 @@ export default function Home() {
           <div className="flex items-center gap-4 md:gap-6">
              <div className="hidden lg:flex flex-col items-end leading-tight">
                 <a href="tel:+996772774433" className="text-sm font-bold text-slate-900 hover:text-blue-900 transition">+996 (772) 77-44-33</a>
-                <a href="tel:+996554900928" className="text-xs text-slate-500 hover:text-blue-900 transition mt-0.5 font-semibold">+996 (554) 900-928</a>
              </div>
             <Link href="#contact" className="hidden xl:block bg-blue-900 text-white px-6 py-3 rounded-lg text-sm font-bold hover:bg-blue-800 transition shadow-lg shadow-blue-900/20 tracking-wide">Оставить заявку</Link>
           </div>
@@ -273,7 +272,7 @@ export default function Home() {
                     <div className="w-full">
                       <p className="font-bold mb-2">Связаться с нами:</p>
                       
-                      <div className="flex flex-wrap items-center gap-3 mb-3">
+                      <div className="flex flex-wrap items-center gap-3">
                         <a href="tel:+996772774433" className="text-blue-200 text-sm hover:text-white font-bold">
                           +996 (772) 77-44-33
                         </a>
@@ -282,20 +281,6 @@ export default function Home() {
                              <MessageCircle size={16} />
                            </a>
                            <a href="https://t.me/+996772774433" target="_blank" className="bg-blue-500 p-1.5 rounded text-white hover:bg-blue-400 transition hover:scale-110" title="Telegram">
-                             <Send size={16} />
-                           </a>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-wrap items-center gap-3">
-                        <a href="tel:+996554900928" className="text-blue-200 text-sm hover:text-white font-bold">
-                          +996 (554) 900-928
-                        </a>
-                        <div className="flex gap-2">
-                           <a href="https://wa.me/996554900928" target="_blank" className="bg-green-600 p-1.5 rounded text-white hover:bg-green-500 transition hover:scale-110" title="WhatsApp">
-                             <MessageCircle size={16} />
-                           </a>
-                           <a href="https://t.me/+996554900928" target="_blank" className="bg-blue-500 p-1.5 rounded text-white hover:bg-blue-400 transition hover:scale-110" title="Telegram">
                              <Send size={16} />
                            </a>
                         </div>
